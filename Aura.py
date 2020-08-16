@@ -94,9 +94,16 @@ def GetGame(ID):
 
     #print(SiteURL + f"LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36")
     
+
+    MatchObject = {}
+    MatchObject['id'] = ID
+    MatchObject['Team1Name'] = Team1Name
+    MatchObject['Team2Name'] = Team2Name
+    MatchObject['Team1Score'] = Team1Score
+    MatchObject['Team2Score'] = Team2Score
     StoredMatch = MySQL.GetMatch(ID)
     if StoredMatch == False:
-        MySQL.CreateMatch()
+        MySQL.CreateMatch(MatchObject)
     
     
     print(f"ID {ID}")

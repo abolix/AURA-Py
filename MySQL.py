@@ -38,7 +38,7 @@ def GetMatch(Id):
     return Result
 
 
-def CreateMatch():
-    SQLQuery = "INSERT INTO matches (id, Team1Name, Team2Name, Team1Score, Team2Score, GoalData, Status) VALUES(%s,%s,%s,%s,%s,%s,%s)"
-    SQLData = ()
+def CreateMatch(MatchData):
+    SQLQuery = "INSERT INTO matches (id, Team1Name, Team2Name, Team1Score, Team2Score, GoalData) VALUES(%s,%s,%s,%s,%s,%s,%s)"
+    SQLData = (MatchData['id'],MatchData['Team1Name'], MatchData['Team2Name'], MatchData['Team1Score'],MatchData['Team2Score'],'[]')
     cur.execute(SQLQuery,SQLData)
