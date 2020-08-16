@@ -1,8 +1,9 @@
 import requests
 import json
+import threading
 import math
-
-SiteURL = "https://1xirspiwj.com/"
+import MySQL
+SITEURL = "https://pers1x14886.top/"
 
 
 def TrueArray(Arr):
@@ -13,8 +14,8 @@ def TrueArray(Arr):
 
 
 def GetGamesList():
-    SportData = requests.get(
-        SiteURL + "LiveFeed/Get1x2_VZip?sports=85&count=10&lng=en&mode=4&cyberFlag=1&country=75&partner=36&getEmpty=true").text
+    APIURL = f"{SITEURL}LiveFeed/Get1x2_VZip?sports=85&count=10&lng=en&mode=4&cyberFlag=1&country=75&partner=36&getEmpty=true"
+    SportData = requests.get(APIURL).text
 
     SportData = json.loads(SportData)
     SportData = SportData['Value']
@@ -38,20 +39,26 @@ def GetGamesList():
 
 
 def GetGame(ID):
-    GameData = requests.get(
-        SiteURL + f"LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36").text
+    threading.Timer(10.0, GetGame , args=(ID,)).start()
+    APIURL = f"{SITEURL}LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36"
+    GameData = requests.get(APIURL).text
     GameData = json.loads(GameData)
     GameData = GameData['Value']
     try:
         TimeAll = GameData['SC']['TS']
     except KeyError:
         TimeAll = 0
+    League = GameData['L']
     TimeMinute = math.floor(TimeAll / 60)
     TimeSecond = TimeAll - (TimeMinute * 60)
     TimeMinute = "{0:0=2d}".format(TimeMinute)
     TimeSecond = "{0:0=2d}".format(TimeSecond)
     Team1Name = GameData['O1']
     Team2Name = GameData['O2']
+    try:
+        TheHalf = GameData['SC']['CP']
+    except:
+        TheHalf = 0
 
     OddLockArr = []
     LockData = GameData['GE']
@@ -85,12 +92,20 @@ def GetGame(ID):
         Status = "Game in Progress"
         # Half time | Game in Progress | Match finished | Pre-match bets
 
+    #print(SiteURL + f"LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36")
+    
+    StoredMatch = MySQL.GetMatch(ID)
+    if StoredMatch == False:
+        MySQL.CreateMatch()
+    
+    
+    print(f"ID {ID}")
     if Status == "Pre-match bets" or Status == "Pre-game betting":
         Status = "Game is not started yet"
         print(f"{Team1Name} vs {Team2Name}")
         print(f"Remaining time to start : {TimeMinute}:{TimeSecond}")
     else:
-        print(f"{Team1Name} vs {Team2Name} , {TimeMinute}:{TimeSecond} , {Team1Score}:{Team2Score} , {Status}")
+        print(f"{Team1Name} vs {Team2Name} , {TimeMinute}:{TimeSecond} , {Team1Score}:{Team2Score} , {Status} , {League}")
 
     print('---------------')
 
