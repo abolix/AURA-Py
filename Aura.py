@@ -2,17 +2,25 @@ import requests
 import json
 import threading
 import math
-import MySQL
+from MySQL import MySQL
 import sys
+
+
+DB_NAME = "aura"
+DB_USER = "root"
+DB_PASS = ""
+DB_HOST = "localhost"
+
+
 SITEURL = "https://pers1x14886.top/"
 
+CheckedMatches = []
 
 def TrueArray(Arr):
     for ArrItem in Arr:
         if ArrItem == False:
             return False
         return True
-
 
 def GetGamesList():
     APIURL = f"{SITEURL}LiveFeed/Get1x2_VZip?sports=85&count=10&lng=en&mode=4&cyberFlag=1&country=75&partner=36&getEmpty=true"
@@ -40,6 +48,21 @@ def GetGamesList():
 
 
 def GetGame(ID,GameObject = {}):
+    I = 0
+    for thread in threading.enumerate(): 
+        ThreadName = thread.name
+        try:
+            ThreadName = int(ThreadName)
+        except:
+            ThreadName = 0
+        if ID == ThreadName:
+            I += 1
+        if I == 2:
+            print(f"Eliminated {ID}")
+            sys.exit()
+    MySQLThread = MySQL(DB_HOST,DB_NAME,DB_USER,DB_PASS)
+
+    CheckedMatches.append(ID)
     # MainThread = threading.Timer(10.0, GetGame , args=(ID,))
     # MainThread.name = ID
     # MainThread.start()
@@ -106,18 +129,15 @@ def GetGame(ID,GameObject = {}):
         if GameObject['Team1Score'] != Team1Score:
             print('Gooooooooooooooal For Team 1')
             GoalDetails['T'] = 1 # Team
-            MySQL.AddToGoalData(ID,GoalDetails)
+            MySQLThread.AddToGoalData(ID,GoalDetails)
         if GameObject['Team2Score'] != Team2Score:
             print('Gooooooooooooooal For Team 2')
             GoalDetails['T'] = 2 # Team
-            MySQL.AddToGoalData(ID,GoalDetails)
+            MySQLThread.AddToGoalData(ID,GoalDetails)
     # {
     #   {"Minute":10,"Half":"1","Team":1}
     #   {"Minute":10,"Half":"1","Team":1}
-    #   {"Minute":10,"Half":"1","Team":1}
-    #   {"Minute":10,"Half":"1","Team":1}
-    #   {"Minute":10,"Half":"1","Team":1}
-    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":78,"Half":"2","Team":1}
     # }
 
 
@@ -127,13 +147,13 @@ def GetGame(ID,GameObject = {}):
     MatchObject['Team2Name'] = Team2Name
     MatchObject['Team1Score'] = Team1Score
     MatchObject['Team2Score'] = Team2Score
-    StoredMatch = MySQL.GetMatch(ID)
+    StoredMatch = MySQLThread.GetMatch(ID)
     if StoredMatch == False:
-        MySQL.CreateMatch(MatchObject)
+        MySQLThread.CreateMatch(MatchObject)
     
     
     if Status == "Match finished":
-        MySQL.FinishMatch(ID)
+        MySQLThread.FinishMatch(ID)
         sys.exit()
         # Game FINISHED
     
@@ -156,11 +176,15 @@ def GetGame(ID,GameObject = {}):
     MainThread.start()
 
 
-AllData = GetGamesList()
+def StartProject():
+    AllData = GetGamesList()
+    for Game in AllData:
+        MatchID = Game['MatchID']
+        GetGame(MatchID)
+    MainThread = threading.Timer(30.0, StartProject)
+    MainThread.name = "MainProject"
+    MainThread.start()
 
-for Game in AllData:
-    MatchID = Game['MatchID']
-    # MainThread = threading.Timer(10.0, GetGame , args=(MatchID,))
-    # MainThread.name = ID
-    # MainThread.start()
-    GetGame(MatchID)
+
+
+StartProject()
