@@ -3,6 +3,7 @@ import json
 import threading
 import math
 import MySQL
+import sys
 SITEURL = "https://pers1x14886.top/"
 
 
@@ -38,8 +39,10 @@ def GetGamesList():
     return ReturnData
 
 
-def GetGame(ID):
-    threading.Timer(10.0, GetGame , args=(ID,)).start()
+def GetGame(ID,GameObject = {}):
+    # MainThread = threading.Timer(10.0, GetGame , args=(ID,))
+    # MainThread.name = ID
+    # MainThread.start()
     APIURL = f"{SITEURL}LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36"
     GameData = requests.get(APIURL).text
     GameData = json.loads(GameData)
@@ -95,6 +98,29 @@ def GetGame(ID):
     #print(SiteURL + f"LiveFeed/GetGameZip?id={ID}&lng=en&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=250&partner=36")
     
 
+    if GameObject != {}:
+        GoalDetails = {}
+        GoalDetails['H'] = TheHalf # Half
+        GoalDetails['M'] = TimeMinute # Minute
+
+        if GameObject['Team1Score'] != Team1Score:
+            print('Gooooooooooooooal For Team 1')
+            GoalDetails['T'] = 1 # Team
+            MySQL.AddToGoalData(ID,GoalDetails)
+        if GameObject['Team2Score'] != Team2Score:
+            print('Gooooooooooooooal For Team 2')
+            GoalDetails['T'] = 2 # Team
+            MySQL.AddToGoalData(ID,GoalDetails)
+    # {
+    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":10,"Half":"1","Team":1}
+    #   {"Minute":10,"Half":"1","Team":1}
+    # }
+
+
     MatchObject = {}
     MatchObject['id'] = ID
     MatchObject['Team1Name'] = Team1Name
@@ -106,6 +132,11 @@ def GetGame(ID):
         MySQL.CreateMatch(MatchObject)
     
     
+    if Status == "Match finished":
+        MySQL.FinishMatch(ID)
+        sys.exit()
+        # Game FINISHED
+    
     print(f"ID {ID}")
     if Status == "Pre-match bets" or Status == "Pre-game betting":
         Status = "Game is not started yet"
@@ -115,11 +146,21 @@ def GetGame(ID):
         print(f"{Team1Name} vs {Team2Name} , {TimeMinute}:{TimeSecond} , {Team1Score}:{Team2Score} , {Status} , {League}")
 
     print('---------------')
+    print('---------------')
+    for thread in threading.enumerate(): 
+        print(thread.name)
+    print('---------------')
+    print('---------------')
+    MainThread = threading.Timer(10.0, GetGame , args=(ID,MatchObject))
+    MainThread.name = ID
+    MainThread.start()
 
 
 AllData = GetGamesList()
 
 for Game in AllData:
     MatchID = Game['MatchID']
-    # print(Game['Status'])
+    # MainThread = threading.Timer(10.0, GetGame , args=(MatchID,))
+    # MainThread.name = ID
+    # MainThread.start()
     GetGame(MatchID)
