@@ -1,14 +1,16 @@
 import mysql.connector
 import sys
 import json
+
+
 class MySQL:
-    def __init__(self,DatabaseHost,DatabaseName,DatabaseUser,DatabasePass):
+    def __init__(self, DatabaseHost, DatabaseName, DatabaseUser, DatabasePass):
         try:
             conn = mysql.connector.connect(
-            host=DatabaseHost,
-            database=DatabaseName,
-            user=DatabaseUser,
-            password=DatabasePass
+                host=DatabaseHost,
+                database=DatabaseName,
+                user=DatabaseUser,
+                password=DatabasePass
             )
             conn.autocommit = True
             # conn.autocommit(True)
@@ -20,7 +22,7 @@ class MySQL:
             print('Error in Connecting to Database .')
             sys.exit(1)
 
-    def GetMatch(self,Id):
+    def GetMatch(self, Id):
         SQLQuery = "SELECT * FROM matches WHERE id=%s"
         SQLData = (Id,)
         self.cur.execute(SQLQuery, SQLData)
@@ -30,13 +32,13 @@ class MySQL:
             return False
         return Result
 
+    def CreateMatch(self, MatchData):
+        SQLQuery = "INSERT INTO matches (id, Team1Name, Team2Name, Team1Score, Team2Score, League, GoalData) VALUES(%s,%s,%s,%s,%s,%s,%s)"
+        SQLData = (MatchData['id'], MatchData['Team1Name'], MatchData['Team2Name'],
+                   MatchData['Team1Score'], MatchData['Team2Score'], MatchData['League'], '[]')
+        self.cur.execute(SQLQuery, SQLData)
 
-    def CreateMatch(self,MatchData):
-        SQLQuery = "INSERT INTO matches (id, Team1Name, Team2Name, Team1Score, Team2Score, GoalData) VALUES(%s,%s,%s,%s,%s,%s)"
-        SQLData = (MatchData['id'],MatchData['Team1Name'], MatchData['Team2Name'], MatchData['Team1Score'],MatchData['Team2Score'],'[]')
-        self.cur.execute(SQLQuery,SQLData)
-
-    def FinishMatch(self,Id):
+    def FinishMatch(self, Id):
         MatchData = self.GetMatch(Id)
         if MatchData == False:
             return False
@@ -44,11 +46,10 @@ class MySQL:
         if int(MatchData['Team1Score']) + int(MatchData['Team2Score']) == len(GoalData):
             SQLQuery = "UPDATE matches SET status = 1 WHERE id = %s"
             SQLData = (Id,)
-            self.cur.execute(SQLQuery,SQLData)
+            self.cur.execute(SQLQuery, SQLData)
             return True
 
-
-    def AddToGoalData(self,Id,GoalDetails):
+    def AddToGoalData(self, Id, GoalDetails):
         MatchData = self.GetMatch(Id)
         if MatchData == False:
             return False
@@ -60,7 +61,8 @@ class MySQL:
         GoalData = json.loads(MatchData['GoalData'])
         GoalData.append(GoalDetails)
         GoalData = json.dumps(GoalData)
-        SQLQuery = "UPDATE matches SET GoalData = %s , " + TeamName + " = " + TeamName + " + 1 WHERE id = %s"
-        SQLData = (GoalData,Id)
-        self.cur.execute(SQLQuery,SQLData)
+        SQLQuery = "UPDATE matches SET GoalData = %s , " + \
+            TeamName + " = " + TeamName + " + 1 WHERE id = %s"
+        SQLData = (GoalData, Id)
+        self.cur.execute(SQLQuery, SQLData)
         return True
