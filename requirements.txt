@@ -1,0 +1,3 @@
+requests>=2.25.1
+# Note: sqlite3 is included with Python standard library
+# No additional database dependencies required!
